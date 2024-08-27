@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Auction</title>
+    <style>
+        /* Add some basic styling */
+        
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        form {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        #auction-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-gap: 20px;
+            padding: 20px;
+        }
+        
+        .auction-item {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .auction-item>div {
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .auction-item a {
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .auction-item button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .auction-item button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Create Auction</h1>
+    <form id="createAuctionForm" action="/auctions" method='POST'>
+        <label for="userId">User ID:</label>
+        <input type="number" id="userId" name="user_id" required>
+
+        <label for="auctionStyle">Auction Style:</label>
+        <select id="auctionStyle" name="auction_style" required>
+            <option value="">Select auction style</option>
+            <option value="increasing">Increasing</option>
+            <option value="decreasing">Decreasing</option>
+        </select>
+
+        <label for="auctionCategory">Auction Category:</label>
+        <input type="text" id="auctionCategory" name="auction_category" required>
+
+        <label for="auctionType">Auction Type:</label>
+        <select id="auctionType" name="auction_type" required>
+            <option value="">Select auction type</option>
+            <option value="open">Open</option>
+            <option value="sealed-bid">Sealed Bid</option>
+        </select>
+
+        <label for="auctionDescription">Auction Description:</label>
+        <textarea id="auctionDescription" name="auction_description" required></textarea>
+
+        <label for="startingBid">Starting Bid:</label>
+        <input type="number" id="startingBid" name="starting_bid" step="0.01" required>
+
+        <label for="incrementAmount">Increment Amount:</label>
+        <input type="number" id="incrementAmount" name="increment_amount" step="0.01" required>
+
+        <label for="bidStartingTime">Bid Starting Time:</label>
+        <input type="datetime-local" id="bidStartingTime" name="bid_starting_time" required>
+
+        <label for="bidClosingTime">Bid Closing Time:</label>
+        <input type="datetime-local" id="bidClosingTime" name="bid_closing_time" required>
+
+        <button type="submit">Create Auction</button>
+    </form>
+
+    <div class="filter-container">
+        <form action="/filter" method="POST">
+            <label for="date">Filter by Id:</label>
+            <input type="text" id="date" name="filter">
+
+            <button type="submit">Filter</button>
+
+        </form>
+    </div>
+
+    <div id="auction-container">
+        <% for(let i=0; i < data.length; i++ ) { %>
+            <div class="auction-item">
+                <div>
+                    <%=  data[i].starting_bid %>
+                </div>
+                <div>
+                    <%=  data[i].auction_category %>
+                </div>
+                <a href="/update/<%= data[i].id%>"> <button type="submit">edit</button></a>
+                <a href="/delete/<%= data[i].id%>"> <button type="submit">delete</button></a>
+
+            </div>
+
+            <% }; %>
+    </div>
+
+</body>
+
+</html>

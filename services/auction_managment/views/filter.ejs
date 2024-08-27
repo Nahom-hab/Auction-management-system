@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtered Auctions</title>
+    <style>
+        /* Add your CSS styles here */
+        
+        .auction-item {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .auction-item h3 {
+            margin-top: 0;
+        }
+        
+        .auction-item p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Filtered Auctions</h1>
+
+
+    <div id="auction-container">
+        <% for(let i=0; i < data.length; i++ ) { %>
+            <div class="auction-item">
+                <%=  data[i].starting_bid %>
+                    <%=  data[i].auction_category %>
+            </div>
+            <% }; %>
+    </div>
+
+
+
+</body>
+
+</html>

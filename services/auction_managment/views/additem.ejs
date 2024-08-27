@@ -1,0 +1,50 @@
+<!-- Create Form -->
+<form id="createForm" method="POST" action="/api/items">
+    <div>
+        <label for="auction_id">Auction ID:</label>
+        <input type="text" id="auction_id" name="auction_id" required>
+    </div>
+    <div>
+        <label for="item_name">Item Name:</label>
+        <input type="text" id="item_name" name="item_name" required>
+    </div>
+    <div>
+        <label for="preview_image">Preview Image:</label>
+        <input type="file" id="preview_image" name="preview_image" required>
+    </div>
+    <div>
+        <label for="images_url">Images URL:</label>
+        <input type="text" id="images_url" name="images_url" required>
+    </div>
+    <button type="submit">Create Item</button>
+</form>
+
+<!-- Update Form -->
+<form id="updateForm" method="PUT" action="/api/items/:id">
+    <div>
+        <label for="update_auction_id">Auction ID:</label>
+        <input type="text" id="update_auction_id" name="auction_id" required>
+    </div>
+    <div>
+        <label for="update_item_name">Item Name:</label>
+        <input type="text" id="update_item_name" name="item_name" required>
+    </div>
+    <div>
+        <label for="update_preview_image">Preview Image:</label>
+        <input type="file" id="update_preview_image" name="preview_image" required>
+    </div>
+    <div>
+        <label for="update_images_url">Images URL:</label>
+        <input type="text" id="update_images_url" name="images_url" required>
+    </div>
+    <button type="submit">Update Item</button>
+</form>
+
+<!-- Delete Form -->
+<form id="deleteForm" method="DELETE" action="/api/items/">
+    <div>
+        <label for="delete_id">Item ID:</label>
+        <input type="number" id="delete_id" name="id" required>
+    </div>
+    <button type="submit">Delete Item</button>
+</form>
