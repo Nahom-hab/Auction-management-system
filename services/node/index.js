@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import bidRouter from './route/bid.route.js'
+import testRouter from './route/test-router.js'
 import pool from './db/db.js';
 
 
@@ -10,127 +11,22 @@ const app = express();
 app.use(express.json());
 
 
+//data base connection
+const connectToDataBase = async () => {
+    try {
+        const res = await pool.query('SELECT NOW()');
+        console.log('Connected to the database:', res.rows[0].now);
+    } catch (err) {
+        console.error('Error connecting to the database:', err.message);
+        process.exit(1);
+    }
+}
+
 app.use('/api/bid', bidRouter)
-
-// Create a new user
-app.post('/users', async (req, res) => {
-    const {
-        firstName,
-        lastName,
-        countryCode,
-        phoneNumber,
-        profileImgUrl,
-        status,
-        password,
-        email,
-        verified
-    } = req.body;
-
-    try {
-        const newUser = await pool.query(
-            `INSERT INTO "user" (first_name, last_name, country_code, phone_number, profile_img_url, status, password, email, verified, created_at, updated_at) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()) RETURNING *`,
-            [firstName, lastName, countryCode, phoneNumber, profileImgUrl, status, password, email, verified]
-        );
-
-        res.status(201).json(newUser.rows[0]);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
-// Read all users
-app.get('/users', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM "user"');
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
-app.post('/auctions', async (req, res) => {
-    const {
-        user_id,
-        auction_style,
-        auction_category,
-        auction_type,
-        auction_description,
-        starting_bid,
-        increment_amount,
-        bid_starting_time,
-        current_max_bid,
-        bid_closing_time,
-        bid_winner_id,
-        status,
-        created_at,
-        updated_at
-    } = req.body;
-
-    try {
-        const result = await pool.query(
-            `INSERT INTO "auction" (
-                "user_id", "auction_style", "auction_category", "auction_type", 
-                "auction_description", "starting_bid", "increment_amount", 
-                "bid_starting_time", "current_max_bid", "bid_closing_time", 
-                "bid_winner_id", "status", "created_at", "updated_at"
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-            RETURNING *`,
-            [
-                user_id,
-                auction_style,
-                auction_category,
-                auction_type,
-                auction_description,
-                starting_bid,
-                increment_amount,
-                bid_starting_time,
-                current_max_bid,
-                bid_closing_time,
-                bid_winner_id,
-                status,
-                created_at,
-                updated_at
-            ]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-app.get('/auctions/:id', async (req, res) => {
-    const auctionId = parseInt(req.params.id, 10);
-
-    if (isNaN(auctionId)) {
-        return res.status(400).send('Invalid Auction ID');
-    }
-
-    try {
-        const result = await pool.query('SELECT * FROM "auction" WHERE id = $1', [auctionId]);
-        if (result.rows.length === 0) {
-            return res.status(404).send('Auction Not Found');
-        }
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-app.use((err, req, res, next) => {
-    const statusCode = err.statusCode || 500;
-    const message = err.message || 'internal server error';
-    res.status(statusCode).json({
-        success: false,
-        statusCode,
-        message
-    })
-})
-
+app.use('api/test', testRouter)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    connectToDataBase()
 });
