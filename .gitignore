@@ -8,8 +8,7 @@ package-lock.json
 dist/
 build/
 .env
-biddingProcessor.js
-queue.js
+
 
 # Go
 *.exe
