@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import bidRouter from './route/bid.route.js'
 import testRouter from './route/test-router.js'
+import escrowRoute from './route/escrow.route.js'
 import pool from './db/db.js';
 
 
@@ -22,11 +23,13 @@ const connectToDataBase = async () => {
     }
 }
 
+app.use('/escrow', escrowRoute);
 app.use('/api/bid', bidRouter)
-app.use('api/test', testRouter)
+app.use('api/sample', testRouter)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     connectToDataBase()
 });
+
