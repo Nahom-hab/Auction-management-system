@@ -3,11 +3,18 @@ import pool from '../db/db.js';
 
 // Create balance record for a user
 export const createBalance = async (req, res, next) => {
-    const { user_id, current_balance } = req.body;
+    const { user_id } = req.body;
     const client = await pool.connect();
     try {
         // Start transaction
         await client.query('BEGIN');
+
+        // Check if balance already exists for the user
+        const balanceExists = await client.query('SELECT id FROM "balance" WHERE user_id = $1', [user_id]);
+        if (balanceExists.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return next(errorHandeler(400, 'Balance record already exists'));
+        }
 
         // Check if user exists
         const userResult = await client.query('SELECT id FROM "user" WHERE id = $1', [user_id]);
@@ -20,7 +27,7 @@ export const createBalance = async (req, res, next) => {
         const result = await client.query(
             `INSERT INTO "balance" (user_id, current_balance, updated_at) 
              VALUES ($1, $2, NOW()) RETURNING *`,
-            [user_id, current_balance || 0]
+            [user_id, 0]
         );
 
         // Commit transaction
@@ -36,6 +43,8 @@ export const createBalance = async (req, res, next) => {
     }
 };
 
+
+// Update balance record for a user
 // Update balance record for a user
 export const updateBalance = async (req, res, next) => {
     const { user_id, amount } = req.body;
@@ -52,7 +61,14 @@ export const updateBalance = async (req, res, next) => {
             return next(errorHandeler(404, 'Balance record not found'));
         }
 
-        const newBalance = balanceResult.rows[0].current_balance + amount;
+        const currentBalance = balanceResult.rows[0].current_balance;
+        const newBalance = parseFloat(currentBalance) + parseFloat(amount);
+
+        // Check if the new balance is negative
+        if (newBalance < 0) {
+            await client.query('ROLLBACK');
+            return next(errorHandeler(400, 'Insufficient balance'));
+        }
 
         // Update the balance
         const result = await client.query(
@@ -74,7 +90,6 @@ export const updateBalance = async (req, res, next) => {
         client.release();
     }
 };
-
 // Get balance record for a user
 export const getBalance = async (req, res, next) => {
     const { user_id } = req.params;

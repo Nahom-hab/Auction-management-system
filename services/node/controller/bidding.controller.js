@@ -2,8 +2,7 @@ import { errorHandeler } from "../utils/errorHandler.js";
 import pool from '../db/db.js';
 import { Worker } from 'worker_threads'
 
-
-export const placebid = async (req, res, next) => {
+export const placeBid = async (req, res, next) => {
     const { user_id, auction_id, amount } = req.body;
     const client = await pool.connect();
 
@@ -45,6 +44,57 @@ export const placebid = async (req, res, next) => {
                     return next(errorHandeler(400, 'Invalid bid amount or auction is not running'));
                 }
 
+                // Check user's balance
+                const balanceResult = await client.query('SELECT current_balance FROM "balance" WHERE user_id = $1 FOR UPDATE', [user_id]);
+
+                if (balanceResult.rows.length === 0) {
+                    await client.query('ROLLBACK');
+                    return next(errorHandeler(404, 'User balance not found'));
+                }
+
+                const currentBalance = parseFloat(balanceResult.rows[0].current_balance);
+
+                // Check if the user has already placed a bid in this auction
+                const previousBidResult = await client.query(
+                    'SELECT * FROM "bid" WHERE user_id = $1 AND auction_id = $2',
+                    [user_id, auction_id]
+                );
+
+                const isFirstBid = previousBidResult.rows.length === 0;
+
+                // If it's the first bid do all these taking money from balance and adding it to escrow account 
+                if (isFirstBid) {
+                    const requiredBalance = selectedAuction.starting_bid * (.1);
+
+
+                    // Ensure the user has sufficient balance
+                    if (currentBalance < requiredBalance) {
+                        await client.query('ROLLBACK');
+                        return next(errorHandeler(400, 'Insufficient balance to place the bid'));
+                    }
+
+                    // Deduct the balance (including $300 if it's the first bid)
+                    const newBalance = currentBalance - requiredBalance;
+                    await client.query(
+                        `UPDATE "balance" 
+                     SET current_balance = $1, updated_at = NOW()
+                     WHERE user_id = $2`,
+                        [newBalance, user_id]
+                    );
+                    //handel the amount decresed from balance is placed on the escrow amount 
+                    await client.query(
+                        `INSERT INTO escrow (auction_id, user_id, amount, status, updated_at)
+                         VALUES ($1, $2, $3, 'PENDING', NOW()) RETURNING *`,
+                        [auction_id, user_id, requiredBalance]
+                    );
+                    //handel the amount decresed from balance is placed on the escrow amount 
+                    await client.query(
+                        `INSERT INTO escrow (auction_id, user_id, amount, status, updated_at)
+                         VALUES ($1, $2, $3, 'PENDING', NOW()) RETURNING *`,
+                        [auction_id, user_id, requiredBalance]
+                    );
+                }
+
                 // Insert new bid
                 const newBid = await client.query(
                     `INSERT INTO "bid" (user_id, auction_id, amount) 
@@ -64,7 +114,7 @@ export const placebid = async (req, res, next) => {
                 res.status(201).json(newBid.rows[0]);
                 break;
             } catch (error) {
-                // errorcode 4001 id dead lock happend in postgress 
+                // Errorcode 40001 means deadlock in Postgres
                 if (retries === 0 || !error.code || error.code !== '40001') {
                     await client.query('ROLLBACK');
                     throw error;
@@ -80,6 +130,7 @@ export const placebid = async (req, res, next) => {
     }
 };
 
+
 export const startProxyBid = (req, res, next) => {
     const user_id = req.params.id;
     const { auction_id, amount, increasing_amount } = req.body;
@@ -88,7 +139,7 @@ export const startProxyBid = (req, res, next) => {
     let responseSent = false;
 
     // Start a new worker thread for the bidding process
-    const worker = new Worker('./threds/worker.js', {
+    const worker = new Worker('./threads/Proxyworker.js', {
         workerData: { user_id, auction_id, amount, increasing_amount }
     });
 

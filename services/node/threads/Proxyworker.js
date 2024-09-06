@@ -36,11 +36,27 @@ async function startProxyBid(user_id, auction_id, amount, increasing_amount) {
                 continue;
             }
 
-            const currentBid = parseFloat(selectedAuction.current_max_bid);
-            let newBidAmount;
+            // Check user's balance
+            const balanceResult = await client.query('SELECT current_balance FROM "balance" WHERE user_id = $1 FOR UPDATE', [user_id]);
 
+            if (balanceResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                parentPort.postMessage({ error: 'User balance not found' });
+                break;
+            }
+
+            const currentBalance = parseFloat(balanceResult.rows[0].current_balance);
+
+            // Check if the user has already placed a bid in this auction (proxy)
+            const previousBidResult = await client.query(
+                'SELECT * FROM "bid" WHERE user_id = $1 AND auction_id = $2',
+                [user_id, auction_id]
+            );
+
+
+            let newBidAmount;
             if (selectedAuction.auction_style === 'increasing') {
-                newBidAmount = currentBid + increasing_amount;
+                newBidAmount = parseFloat(selectedAuction.current_max_bid) + increasing_amount;
 
                 if (newBidAmount > amount) {
                     await client.query('ROLLBACK');
@@ -48,7 +64,7 @@ async function startProxyBid(user_id, auction_id, amount, increasing_amount) {
                     break;
                 }
             } else if (selectedAuction.auction_style === 'decreasing') {
-                newBidAmount = currentBid - increasing_amount;
+                newBidAmount = parseFloat(selectedAuction.current_max_bid) - increasing_amount;
 
                 if (newBidAmount < amount) {
                     await client.query('ROLLBACK');
@@ -56,13 +72,37 @@ async function startProxyBid(user_id, auction_id, amount, increasing_amount) {
                     break;
                 }
             }
+            const isFirstBid = previousBidResult.rows.length === 0;
 
+            // If this is the user's first bid, deduct $300 in addition to the bid amount
+            if (isFirstBid) {
+                let requiredBalance = selectedAuction.starting_bid * (.1);
+
+                // Ensure the user has enough balance
+                if (currentBalance < requiredBalance) {
+                    await client.query('ROLLBACK');
+                    parentPort.postMessage({ error: 'Insufficient balance to place proxy bid' });
+                    break;
+                }
+
+                // Deduct the user's balance
+                const newBalance = currentBalance - requiredBalance;
+                await client.query(
+                    `UPDATE "balance" 
+                 SET current_balance = $1, updated_at = NOW()
+                 WHERE user_id = $2`,
+                    [newBalance, user_id]
+                );
+            }
+
+            // Insert new bid
             await client.query(
                 `INSERT INTO "bid" (user_id, auction_id, amount) 
                  VALUES ($1, $2, $3) RETURNING *`,
                 [user_id, auction_id, newBidAmount]
             );
 
+            // Update auction with the new highest bid
             await client.query(
                 `UPDATE "auction" 
                  SET "current_max_bid" = $1, "bid_winner_id" = $2

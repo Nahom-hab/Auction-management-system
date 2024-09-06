@@ -4,8 +4,8 @@ import { createBalance, getBalance, updateBalance } from '../controller/balance.
 const router = Router();
 
 // Route for creating a balance entry
-router.post('/', createBalance);
-router.put('/', updateBalance);
+router.post('/create', createBalance);
+router.put('/update', updateBalance);
 router.get('/:user_id', getBalance);
 
 

@@ -1,19 +1,19 @@
 import { Router } from 'express';
 import {
-    createEscrowController,
-    releaseEscrowController,
-    refundEscrowController
+    createEscrow,
+    releaseWinnersEscrowToSeller,
+    refundEscrowToBuyers
 } from '../controller/escrow.controller.js';
 
 const router = Router();
 
 // Route to create an escrow entry
-router.post('/create', createEscrowController);
+router.post('/create', createEscrow);
 
 // Route to release funds from escrow to the seller
-router.post('/release', releaseEscrowController);
+router.post('/release', releaseWinnersEscrowToSeller);
 
 // Route to refund funds to the buyer
-router.post('/refund', refundEscrowController);
+router.post('/refund', refundEscrowToBuyers);
 
 export default router;

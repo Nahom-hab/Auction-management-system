@@ -110,8 +110,7 @@ CREATE TABLE "feedback" (
 );
 
 CREATE TABLE "balance" (
-  "id" BIGSERIAL PRIMARY KEY,
-  "user_id" bigint,
+  "user_id" bigint  PRIMARY KEY,
   "current_balance" decimal(10,2) DEFAULT 0,
   "updated_at" timestamptz
 );

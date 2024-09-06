@@ -23,7 +23,8 @@ router.post('/users', async (req, res) => {
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()) RETURNING *`,
             [firstName, lastName, countryCode, phoneNumber, profileImgUrl, status, password, email, verified]
         );
-        res.status(201).json(newUser.rows[0]);  // This line is correct
+        res.status(201).json(newUser.rows[0]);
+        // This line is correct
 
     } catch (err) {
         console.error(err.message);
