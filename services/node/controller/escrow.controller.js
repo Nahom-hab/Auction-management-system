@@ -1,4 +1,5 @@
 import pool from '../db/db.js';
+import { errorHandeler } from '../utils/errorHandler.js';
 
 // Create an escrow entry
 /**

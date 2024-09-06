@@ -30,6 +30,16 @@ app.use('/api/escrow', escrowRoute);
 app.use('/api/bid', bidRouter);
 app.use('/', testRouter);
 
+app.use((err, req, res, next) => {
+    const statusCode = err.statusCode || 500;
+    const message = err.message || 'internal server error';
+    res.status(statusCode).json({
+        success: false,
+        statusCode,
+        message
+    })
+})
+
 const PORT = 5000;
 app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);

@@ -36,10 +36,11 @@ export const placeBid = async (req, res, next) => {
                 ) && selectedAuction.status === 'running';
 
                 // Ensure the user is not bidding on their own auction
-                if (parseInt(selectedAuction.user_id) === parseInt(user_id)) {
+                if (selectedAuction.user_id.toString() === user_id.toString()) {
                     await client.query('ROLLBACK');
                     return next(errorHandeler(400, 'Cannot place a bid on your own auction'));
                 }
+
 
                 // Ensure the bid is valid
                 if (!isValidBid) {

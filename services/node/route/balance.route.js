@@ -9,5 +9,4 @@ router.put('/update', updateBalance);
 router.get('/:user_id', getBalance);
 
 
-
 export default router;
