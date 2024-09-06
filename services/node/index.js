@@ -28,7 +28,7 @@ app.use('/api/balance', balanceRoute);
 app.use('/api/payment', chapaRoute);
 app.use('/api/escrow', escrowRoute);
 app.use('/api/bid', bidRouter);
-app.use('/api/sample', testRouter);
+app.use('/', testRouter);
 
 const PORT = 5000;
 app.listen(PORT, async () => {
