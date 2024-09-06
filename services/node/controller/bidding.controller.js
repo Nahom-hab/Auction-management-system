@@ -1,13 +1,14 @@
 import { errorHandeler } from "../utils/errorHandler.js";
 import pool from '../db/db.js';
-import { Worker } from 'worker_threads'
+import { Worker } from 'worker_threads';
 
+// Handle placing a bid in an auction
 export const placeBid = async (req, res, next) => {
     const { user_id, auction_id, amount } = req.body;
     const client = await pool.connect();
 
     try {
-        let retries = 3;
+        let retries = 3; // Number of retries for handling deadlocks
 
         while (retries > 0) {
             try {
@@ -34,11 +35,13 @@ export const placeBid = async (req, res, next) => {
                         (selectedAuction.current_max_bid - amount) >= selectedAuction.increment_amount)
                 ) && selectedAuction.status === 'running';
 
+                // Ensure the user is not bidding on their own auction
                 if (parseInt(selectedAuction.user_id) === parseInt(user_id)) {
                     await client.query('ROLLBACK');
                     return next(errorHandeler(400, 'Cannot place a bid on your own auction'));
                 }
 
+                // Ensure the bid is valid
                 if (!isValidBid) {
                     await client.query('ROLLBACK');
                     return next(errorHandeler(400, 'Invalid bid amount or auction is not running'));
@@ -62,10 +65,9 @@ export const placeBid = async (req, res, next) => {
 
                 const isFirstBid = previousBidResult.rows.length === 0;
 
-                // If it's the first bid do all these taking money from balance and adding it to escrow account 
+                // If it's the user's first bid, handle balance and escrow
                 if (isFirstBid) {
-                    const requiredBalance = selectedAuction.starting_bid * (.1);
-
+                    const requiredBalance = selectedAuction.starting_bid * 0.1; // 10% of starting bid
 
                     // Ensure the user has sufficient balance
                     if (currentBalance < requiredBalance) {
@@ -73,21 +75,16 @@ export const placeBid = async (req, res, next) => {
                         return next(errorHandeler(400, 'Insufficient balance to place the bid'));
                     }
 
-                    // Deduct the balance (including $300 if it's the first bid)
+                    // Deduct the balance
                     const newBalance = currentBalance - requiredBalance;
                     await client.query(
                         `UPDATE "balance" 
-                     SET current_balance = $1, updated_at = NOW()
-                     WHERE user_id = $2`,
+                         SET current_balance = $1, updated_at = NOW()
+                         WHERE user_id = $2`,
                         [newBalance, user_id]
                     );
-                    //handel the amount decresed from balance is placed on the escrow amount 
-                    await client.query(
-                        `INSERT INTO escrow (auction_id, user_id, amount, status, updated_at)
-                         VALUES ($1, $2, $3, 'PENDING', NOW()) RETURNING *`,
-                        [auction_id, user_id, requiredBalance]
-                    );
-                    //handel the amount decresed from balance is placed on the escrow amount 
+
+                    // Insert the amount into the escrow account
                     await client.query(
                         `INSERT INTO escrow (auction_id, user_id, amount, status, updated_at)
                          VALUES ($1, $2, $3, 'PENDING', NOW()) RETURNING *`,
@@ -95,14 +92,14 @@ export const placeBid = async (req, res, next) => {
                     );
                 }
 
-                // Insert new bid
+                // Insert the new bid into the database
                 const newBid = await client.query(
                     `INSERT INTO "bid" (user_id, auction_id, amount) 
                      VALUES ($1, $2, $3) RETURNING *`,
                     [user_id, auction_id, amount]
                 );
 
-                // Update auction with the new highest bid
+                // Update the auction with the new highest bid
                 await client.query(
                     `UPDATE "auction" 
                      SET "current_max_bid" = $1, "bid_winner_id" = $2
@@ -114,7 +111,7 @@ export const placeBid = async (req, res, next) => {
                 res.status(201).json(newBid.rows[0]);
                 break;
             } catch (error) {
-                // Errorcode 40001 means deadlock in Postgres
+                // Handle deadlock errors by retrying
                 if (retries === 0 || !error.code || error.code !== '40001') {
                     await client.query('ROLLBACK');
                     throw error;
@@ -130,7 +127,7 @@ export const placeBid = async (req, res, next) => {
     }
 };
 
-
+// Handle starting a proxy bid using worker threads
 export const startProxyBid = (req, res, next) => {
     const user_id = req.params.id;
     const { auction_id, amount, increasing_amount } = req.body;
