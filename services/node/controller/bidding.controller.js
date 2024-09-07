@@ -23,6 +23,7 @@ export const placeBid = async (req, res, next) => {
                 }
 
                 const selectedAuction = result.rows[0];
+                const max_bid = parseInt(selectedAuction.current_max_bid) != 0 ? selectedAuction.current_max_bid : selectedAuction.starting_bid;
 
                 // Validate bid based on auction style and status
                 const isValidBid = (
@@ -31,8 +32,8 @@ export const placeBid = async (req, res, next) => {
                         (amount - selectedAuction.current_max_bid) >= selectedAuction.increment_amount)
                     ||
                     (selectedAuction.auction_style === 'decreasing' &&
-                        amount < selectedAuction.current_max_bid &&
-                        (selectedAuction.current_max_bid - amount) >= selectedAuction.increment_amount)
+                        amount < max_bid &&
+                        ((max_bid - amount) >= selectedAuction.increment_amount))
                 ) && selectedAuction.status === 'running';
 
                 // Ensure the user is not bidding on their own auction
@@ -40,7 +41,6 @@ export const placeBid = async (req, res, next) => {
                     await client.query('ROLLBACK');
                     return next(errorHandeler(400, 'Cannot place a bid on your own auction'));
                 }
-
 
                 // Ensure the bid is valid
                 if (!isValidBid) {
@@ -109,20 +109,25 @@ export const placeBid = async (req, res, next) => {
                 );
 
                 await client.query('COMMIT');
-                res.status(201).json(newBid.rows[0]);
-                break;
+                return res.status(201).json(newBid.rows[0]);
             } catch (error) {
-                // Handle deadlock errors by retrying
-                if (retries === 0 || !error.code || error.code !== '40001') {
-                    await client.query('ROLLBACK');
-                    throw error;
+                await client.query('ROLLBACK');
+
+                // Handle specific errors
+                if (error.code === '40001') { // Deadlock error code
+                    retries -= 1;
+                    if (retries === 0) {
+                        return next(errorHandeler(409, 'Deadlock detected. Please try again.'));
+                    }
+                } else if (error.code === '23505') { // Unique violation error
+                    return next(errorHandeler(409, 'Bid already placed by user.'));
+                } else {
+                    return next(errorHandeler(500, 'Internal server error placing bid'));
                 }
-                retries -= 1;
             }
         }
     } catch (error) {
-        console.error('Error placing bid:', error);
-        return next(errorHandeler(500, 'Internal server error placing bid'));
+        return next(errorHandeler(500, 'Internal server error'));
     } finally {
         client.release();
     }
