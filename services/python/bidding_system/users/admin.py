@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User
+from .models import User,UserAuthentication
 
 class UserAdmin(BaseUserAdmin):
     ordering = ['email']
@@ -20,3 +20,8 @@ class UserAdmin(BaseUserAdmin):
     )
 
 admin.site.register(User, UserAdmin)
+@admin.register(UserAuthentication)
+class UserAuthenticationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'security_question_ans')
+    search_fields = ('user__username', 'security_question_ans')
+

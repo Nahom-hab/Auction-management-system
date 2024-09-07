@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -85,7 +86,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'bidding_system',
         'USER': 'postgres',
-        'PASSWORD': '0953328197qweR',
+        'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -128,7 +129,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -149,9 +151,9 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
     'ACCESS_TOKEN_LIFETIME': timedelta(days = 1)
 }
-DJOSER = {
-    'SERIALIZERS' :{
-        'user_create': 'core.serializers.UserCreatSerializer',
-        'current_user' : 'core.serializers.UserSerializer'
-    } 
-}
+# DJOSER = {
+#     'SERIALIZERS' :{
+#         'user_create': 'core.serializers.UserCreatSerializer',
+#         'current_user' : 'core.serializers.UserSerializer'
+#     } 
+# }

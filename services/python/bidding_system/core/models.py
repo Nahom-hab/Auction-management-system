@@ -11,29 +11,7 @@ AUCTION_STYLE_CHOICES = [
     ('decreasing', 'Decreasing'),
 ]
 
-class UserAuthentication(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
-    security_question_ans = models.CharField(max_length=255, blank=True, null=True)
-    class Meta:
-        db_table = 'user_authentication'
-
-    def __str__(self):
-        return f'Auth for {self.user}'
-
-class Transaction(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='transactions', null=True)
-    txref = models.CharField(max_length=255, unique=True, blank=True, null=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    status = models.CharField(max_length=255, default='PENDING')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'transaction'
-
-    def __str__(self):
-        return f'Transaction {self.txref}'
-
+    
 class Auction(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='auctions', null=True)
     auction_style = models.CharField(max_length=20, choices=AUCTION_STYLE_CHOICES, blank=True, null=True)
@@ -54,7 +32,7 @@ class Auction(models.Model):
 
     def __str__(self):
         return self.auction_description or ''
-
+    
 class Item(models.Model):
     auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='items', null=True)
     item_name = models.CharField(max_length=255, blank=True, null=True)
@@ -66,6 +44,24 @@ class Item(models.Model):
 
     def __str__(self):
         return self.item_name or ''
+    
+class Transaction(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='transactions', null=True)
+    txref = models.CharField(max_length=255, unique=True, blank=True, null=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    status = models.CharField(max_length=255, default='PENDING')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'transaction'
+
+    def __str__(self):
+        return f'Transaction {self.txref}'
+
+
+
+
 
 class AuctionHistory(models.Model):
     auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='history', null=True)

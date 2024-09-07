@@ -1,10 +1,5 @@
 from django.contrib import admin
-from .models import UserAuthentication, Transaction, Auction, Item, AuctionHistory, Bid, ProxyBidding, Escrow, Feedback, Balance
-
-@admin.register(UserAuthentication)
-class UserAuthenticationAdmin(admin.ModelAdmin):
-    list_display = ('user', 'security_question_ans')
-    search_fields = ('user__username', 'security_question_ans')
+from .models import Transaction, Auction, Item, AuctionHistory, Bid, ProxyBidding, Escrow, Feedback, Balance
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
