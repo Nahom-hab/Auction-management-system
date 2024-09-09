@@ -175,3 +175,43 @@ export const startProxyBid = (req, res, next) => {
         }
     });
 };
+
+
+// Check if a proxy bid is active for a given auction and user
+export const IsProxyBidOn = async (req, res, next) => {
+    const { auction_id, user_id } = req.body;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Lock proxy_bidding row to prevent concurrent updates
+        const result = await client.query(
+            'SELECT * FROM "proxy_bidding" WHERE auction_id = $1 AND user_id = $2 FOR UPDATE',
+            [auction_id, user_id]
+        );
+
+        if (result.rows.length === 0) {
+            await client.query('ROLLBACK');
+            // Return "Proxy is not on" if no rows found
+            return res.status(200).json({ message: 'Proxy is not on' });
+        }
+
+        const proxyBid = result.rows[0];
+
+        // Commit transaction
+        await client.query('COMMIT');
+
+        // Return "Proxy is on" and the proxy bid details
+        return res.status(200).json({
+            message: 'Proxy is on',
+            proxyBid
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        return next(errorHandeler(500, 'Internal server error checking proxy bid'));
+    } finally {
+        client.release();
+    }
+};

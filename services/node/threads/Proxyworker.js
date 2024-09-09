@@ -107,6 +107,11 @@ async function startProxyBid(user_id, auction_id, amount, increasing_amount) {
                  VALUES ($1, $2, $3) RETURNING *`,
                 [user_id, auction_id, newBidAmount]
             );
+            await client.query(
+                `INSERT INTO "proxy_bidding" (user_id, auction_id, amount,increasing_amount) 
+                 VALUES ($1, $2, $3, $4) RETURNING *`,
+                [user_id, auction_id, amount, increasing_amount]
+            );
 
             // Update the auction with the new highest bid
             await client.query(
