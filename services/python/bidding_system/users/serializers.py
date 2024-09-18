@@ -22,8 +22,7 @@ class UserAuthenticationSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     verified = serializers.BooleanField(read_only=True)
-    profile_img_url = serializers.ImageField(read_only=True)
-    user_authentication = UserAuthenticationSerializer(required=False, allow_null=True)
+    user_authentication = UserAuthenticationSerializer(required=True, write_only =True)
 
     class Meta:
         model = User
@@ -42,32 +41,21 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def update(self, instance, validated_data):
-        user_auth_data = validated_data.pop('user_authentication', None)
-        password = validated_data.pop('password', None)
+        validated_data.pop('user_authentication', None)
+        validated_data.pop('password', None)
+        
         instance = super().update(instance, validated_data)
-        if password:
-            instance.set_password(password)
         instance.save()
-        if user_auth_data:
-            UserAuthentication.objects.update_or_create(user=instance, defaults=user_auth_data)
         return instance
 
-class UserImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id','profile_img_url']
-    def validate_profile_img_url(self, value):
-        if not value.name.lower().endswith(('.png', '.jpg', '.jpeg')):
-            raise serializers.ValidationError("Only PNG, JPG, and JPEG files are allowed.")
-        return value
-    def create(self, validated_data):
-        user_id = self.context['view'].kwargs['user_pk']
-        user = User.objects.get(pk=user_id)
-        user.profile_img_url = validated_data['profile_img_url']
-        user.save()
-        return user
+class ChangePasswordSerializer(serializers.Serializer):
+    security_question_ans = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, required=True)
 
-class PasswordResetSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    user_authentication = serializers.DictField(child=serializers.CharField())
-    new_password = serializers.CharField(write_only=True)
+    def validate(self, data):
+        user = self.context['user']
+
+        user_auth = user.user_authentication
+        if not user_auth or user_auth.security_question_ans != data['security_question_ans']:
+            raise serializers.ValidationError("Security question answer is incorrect.")
+        return data
