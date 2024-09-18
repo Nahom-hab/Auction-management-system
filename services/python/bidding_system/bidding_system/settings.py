@@ -38,14 +38,23 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    "debug_toolbar",
+    'debug_toolbar',
+    'django_filters',
     'rest_framework',
-    'djoser',
     'core',
     'users',
     'api',
+    'drf_yasg',
 ]
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = 'ktsintern2024@example.com'  
+EMAIL_HOST_PASSWORD = 'ktsintern'  
+DEFAULT_FROM_EMAIL = 'ktsintern2024@example.com'
 MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     'django.middleware.security.SecurityMiddleware',
@@ -62,7 +71,7 @@ ROOT_URLCONF = 'bidding_system.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -86,7 +95,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'bidding_system',
         'USER': 'postgres',
-        'PASSWORD': '',
+        'PASSWORD': '0953328197qweR',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -116,13 +125,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# TIME_ZONE = 'UTC'
 
-USE_I18N = True
+# USE_I18N = True
 
-USE_TZ = True
+# USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -140,12 +149,13 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
 AUTH_USER_MODEL = 'users.User'
 INTERNAL_IPS = [
-    # ...
+
     "127.0.0.1",
-    # ...
+
 ]
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
@@ -157,3 +167,40 @@ SIMPLE_JWT = {
 #         'current_user' : 'core.serializers.UserSerializer'
 #     } 
 # }
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+
+# Results backend (optional)
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+# Configure Celery to store periodic tasks
+CELERY_BEAT_SCHEDULE = {
+    'check-condition-every-minute': {
+        'task': 'myapp.tasks.check_condition',
+        'schedule': 60.0,  # Run every minute
+    },
+}
+import os
+from datetime import timedelta
+from celery import Celery
+
+
+TIME_ZONE = 'Africa/Nairobi'  # East Africa Time (EAT)
+USE_TZ = True
+
+CELERY_BEAT_SCHEDULE = {
+    'update-auction-status': {
+        'task': 'core.tasks.update_auction_status',
+        'schedule': timedelta(seconds=10),  # Run every 1 minute
+    },
+}
+
+app = Celery('bidding_system')
+
+app.conf.beat_schedule = {
+    'update-auction-status': {
+        'task': 'core.tasks.update_auction_status',
+        'schedule': timedelta(minutes=1),  # Run every 1 minute
+    },
+}
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_TIMEZONE = 'Africa/Nairobi'

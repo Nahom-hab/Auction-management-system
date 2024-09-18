@@ -10,7 +10,11 @@ AUCTION_STYLE_CHOICES = [
     ('increasing', 'Increasing'),
     ('decreasing', 'Decreasing'),
 ]
-
+AUCTION_STATUS=[
+    ('running','running'),
+    ('finished','finished'),
+    ('pending','pending')
+]
     
 class Auction(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='auctions', null=True)
@@ -26,7 +30,7 @@ class Auction(models.Model):
     bid_winner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='won_auctions', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    status = models.CharField(max_length=256,choices=AUCTION_STATUS,default='pending')
     class Meta:
         db_table = 'auction'
 
@@ -34,7 +38,7 @@ class Auction(models.Model):
         return self.auction_description or ''
     
 class Item(models.Model):
-    auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='items', null=True)
+    auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='items')
     item_name = models.CharField(max_length=255, blank=True, null=True)
     preview_image = models.URLField(blank=True, null=True)
     images_url = models.JSONField(blank=True, null=True)

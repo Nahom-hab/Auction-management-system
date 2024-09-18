@@ -30,7 +30,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     country_code = models.CharField(max_length=3, blank=True, null=True)
     phone_number = models.CharField(max_length=255, blank=True, null=True)
-    profile_img_url = models.ImageField(blank=True, null=True, upload_to='user/images')
+    profile_img_url = models.URLField(blank=True, null=True,)
     status = models.CharField(max_length=255, blank=True, null=True)
     verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

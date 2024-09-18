@@ -1,18 +1,15 @@
 from django.urls import path, include
 from rest_framework import routers
-from rest_framework_nested.routers import NestedDefaultRouter
-from .views import CustomTokenObtainPairView, UserViewSet,TokenRefreshView,UserDetailView,UserImageViewSet
+from .views import CustomTokenObtainPairView, UserViewSet, TokenRefreshView, UserDetailView, ChangePasswordView, VerifyEmailView
 
 router = routers.DefaultRouter()
-router.register('profile', UserViewSet,basename='user')
-
-image_router = NestedDefaultRouter(router,'profile', lookup = 'user')
-image_router.register('images', UserImageViewSet, basename='user-images')
+router.register('profile', UserViewSet, basename='user')
 
 urlpatterns = [
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name ='token_refresh'),
-    path('profile/me/', UserDetailView.as_view(), name = "user_detail"),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('profile/me/', UserDetailView.as_view(), name='user_detail'),
+    path('profile/change-password/', ChangePasswordView.as_view(), name='change_password'),
+    path('profile/verify-email/<str:token>/', VerifyEmailView.as_view(), name='verify_email'),
     path('', include(router.urls)),
-    path('', include(image_router.urls)),
 ]
